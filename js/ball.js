@@ -8,7 +8,7 @@ let indexCounts = [];
 // VIEW MATRIX - Camera (view matrix)
 let cam = new Camera();
 
-let positionBuffer = null;
+let cottageBuffer = null;
 
 
 function parse(jObj){
@@ -108,6 +108,7 @@ function createProgram(gl, vertexShader, fragmentShader){
 function myMain() {
     // uri is relative to directory containing HTML page
     loadExternalJSON('./model/cottage_obj.json');
+    // loadExternalJSON('./model/Heli_bell.json');
     // setUpWebGL();
 }
 
@@ -122,66 +123,34 @@ function setUpWebGL() {
     let program = createProgram(gl, vertexShader, fragmentShader);
 
     // process attribute data from JSON model
-    let cubeVertices = [];
-    let cubeIndices = [];
+    let cottageVertices = [];
+    let cottageIndices = [];
     let indexCounts = [];
-    // let cuboid = cube(1);
-    // for(let i = 0, j=0; i < cuboid.vertexPositions.length; i += 3, j+=2){ // structures cube vertex data into correct format
-    //     cubeVertices.push(cuboid.vertexPositions[i]);
-    //     cubeVertices.push(cuboid.vertexPositions[i+1]);
-    //     cubeVertices.push(cuboid.vertexPositions[i+2]);
-    //     cubeVertices.push(cuboid.vertexNormals[i]);
-    //     cubeVertices.push(cuboid.vertexNormals[i+1]);
-    //     cubeVertices.push(cuboid.vertexNormals[i+2]);
-    //     cubeVertices.push(cuboid.vertexTextureCoords[j]);
-    //     cubeVertices.push(cuboid.vertexTextureCoords[j+1]);
-    // }
-    // for(let i =0; i <cuboid.indices.length; i++){
-    //     cubeIndices.push(cuboid.indices[i]);
-    // }
-    // // indexCounts.push(cuboid.indices.length);
-    // let torus = uvTorus(3,2, 12, 12);
-    // for(let i = 0, j=0; i < torus.vertexPositions.length; i += 3, j+=2){ // structures cube vertex data into correct format
-    //     cubeVertices.push(torus.vertexPositions[i]);
-    //     cubeVertices.push(torus.vertexPositions[i+1]);
-    //     cubeVertices.push(torus.vertexPositions[i+2]);
-    //     cubeVertices.push(torus.vertexNormals[i]);
-    //     cubeVertices.push(torus.vertexNormals[i+1]);
-    //     cubeVertices.push(torus.vertexNormals[i+2]);
-    //     cubeVertices.push(torus.vertexTextureCoords[j]);
-    //     cubeVertices.push(torus.vertexTextureCoords[j+1]);
-    // }
-    // // console.log(torus.indices);
-    // for(let i =0; i <torus.indices.length; i++){
-    //     cubeIndices.push(torus.indices[i]+cuboid.vertexPositions.length/3);
-    //     // cubeIndices.push(torus.indices[i]);
-
-    // }
    
     let indicesOffset = 0;
     for(let k = 0; k<ModelAttributeArray.length; k++){
         for(let i = 0, j =0; i < ModelAttributeArray[k].vertices.length; i += 3, j+=2){ // structures cube vertex data into correct format
             // console.log(ModelAttributeArray[i])
-            cubeVertices.push(ModelAttributeArray[k].vertices[i]);
-            cubeVertices.push(ModelAttributeArray[k].vertices[i+1]);
-            cubeVertices.push(ModelAttributeArray[k].vertices[i+2]);
-            cubeVertices.push(ModelAttributeArray[k].normals[i]);
-            cubeVertices.push(ModelAttributeArray[k].normals[i+1]);
-            cubeVertices.push(ModelAttributeArray[k].normals[i+2]);
+            cottageVertices.push(ModelAttributeArray[k].vertices[i]);
+            cottageVertices.push(ModelAttributeArray[k].vertices[i+1]);
+            cottageVertices.push(ModelAttributeArray[k].vertices[i+2]);
+            cottageVertices.push(ModelAttributeArray[k].normals[i]);
+            cottageVertices.push(ModelAttributeArray[k].normals[i+1]);
+            cottageVertices.push(ModelAttributeArray[k].normals[i+2]);
             if(ModelAttributeArray[k].texturecoords == undefined){
-                cubeVertices.push(0);
-                cubeVertices.push(0);
+                cottageVertices.push(0);
+                cottageVertices.push(0);
             } else {
-                cubeVertices.push(ModelAttributeArray[k].texturecoords[0][j]);
-                cubeVertices.push(ModelAttributeArray[k].texturecoords[0][j+1]);
+                cottageVertices.push(ModelAttributeArray[k].texturecoords[0][j]);
+                cottageVertices.push(ModelAttributeArray[k].texturecoords[0][j+1]);
             }
 
         }
 
         for(let i=0; i < ModelAttributeArray[k].faces.length; i++){
-            cubeIndices.push(ModelAttributeArray[k].faces[i][0] + indicesOffset);
-            cubeIndices.push(ModelAttributeArray[k].faces[i][1] + indicesOffset);
-            cubeIndices.push(ModelAttributeArray[k].faces[i][2] + indicesOffset);
+            cottageIndices.push(ModelAttributeArray[k].faces[i][0] + indicesOffset);
+            cottageIndices.push(ModelAttributeArray[k].faces[i][1] + indicesOffset);
+            cottageIndices.push(ModelAttributeArray[k].faces[i][2] + indicesOffset);
         }
         indicesOffset += ModelAttributeArray[k].vertices.length/3;
         indexCounts.push(ModelAttributeArray[k].faces.length*3);
@@ -190,9 +159,9 @@ function setUpWebGL() {
     //set up buffers
     //POSITION
     let positionAttributeLocation = gl.getAttribLocation(program, 'vertPosition');
-    positionBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(cubeVertices), gl.STATIC_DRAW);
+    cottageBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, cottageBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(cottageVertices), gl.STATIC_DRAW);
     gl.enableVertexAttribArray(positionAttributeLocation);
     let posSize = 3; // get/read 3 components per iteration
     let type = gl.FLOAT; // size in bits for each item
@@ -218,7 +187,7 @@ function setUpWebGL() {
     // INDEX BUFFER
     let indexBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
-    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(cubeIndices), gl.STATIC_DRAW);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(cottageIndices), gl.STATIC_DRAW);
 
     //LOAD TEXTURE
     let texture = gl.createTexture();
@@ -227,7 +196,7 @@ function setUpWebGL() {
     let myTexels2 = new Image();
     // myTexels.src = ModelMaterialsArray[0].imgSrc;
     myTexels.src = "./texture/cottage_diffuse.png";
-    myTexels2.src = ModelMaterialsArray[0].imgSrc;
+    // myTexels2.src = ModelMaterialsArray[0].imgSrc;
 
     let isTexLoaded = false;
     myTexels.onload = function() {
@@ -240,15 +209,15 @@ function setUpWebGL() {
         isTexLoaded = true;
     };
 
-    myTexels2.onload = function() {
-        gl.bindTexture(gl.TEXTURE_2D, texture2);
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, myTexels2);
-        gl.generateMipmap(gl.TEXTURE_2D);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-        isTexLoaded = true;
-    };
+    // myTexels2.onload = function() {
+    //     gl.bindTexture(gl.TEXTURE_2D, texture2);
+    //     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, myTexels2);
+    //     gl.generateMipmap(gl.TEXTURE_2D);
+    //     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    //     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    //     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    //     isTexLoaded = true;
+    // };
 
     function loadAndApplyTexture(src) {
         isTexLoaded = false;
@@ -270,11 +239,12 @@ function setUpWebGL() {
     
 
     gl.useProgram(program);
-    console.log(indexCounts);
     let totalCount = 0
     for (let i=0; i< indexCounts.length; i++){
         totalCount += indexCounts[i];
     }
+    console.log(cottageIndices, cottageVertices, totalCount, indexCounts);
+
     function animate(){
         gl.clearColor(1, 1, 1, 1.0);
         gl.clear(gl.COLOR_BUFFER_BIT);
@@ -285,7 +255,7 @@ function setUpWebGL() {
         gl.uniformMatrix4fv(modelLoc, false, floorModel);
         // loadAndApplyTexture("./texture/cottage_diffuse.jpg");
         // gl.drawElements(primtype, indexCounts[0], gl.UNSIGNED_SHORT, 0);
-        gl.drawElements(primtype, totalCount, gl.UNSIGNED_SHORT, 0);
+        // gl.drawElements(primtype, totalCount, gl.UNSIGNED_SHORT, 0);
         // gl.drawElements(primtype, indexCounts[1], gl.UNSIGNED_SHORT, indexCounts[0]*Uint16Array.BYTES_PER_ELEMENT);
 
 
@@ -295,20 +265,22 @@ function setUpWebGL() {
         // loadAndApplyTexture(ModelMaterialsArray[0].imgSrc);
 
 
-        // if(isTexLoaded){
-        //     for(let i=0; i<ModelAttributeArray.length; i++){
-        //         cubeModel = glMatrix.mat4.create();
-        //         glMatrix.mat4.multiply(cubeModel, cubePos, MainModelMat);
-        //         glMatrix.mat4.multiply(cubeModel, cubeModel, ModelAttributeArray[i].modelMat);
-        //         gl.uniformMatrix4fv(modelLoc, false, cubeModel);
-        //         gl.drawElements(primtype, ModelAttributeArray[i].faces.length*3, gl.UNSIGNED_SHORT, 0);
-        //         // if(i==ModelAttributeArray.length-1){
-        //         //     resetTex("./texture/sand.jpg");
-        //         // } else resetTex(ModelMaterialsArray[i+1].imgSrc);
+        if(isTexLoaded){
+            let count = 0;
+            for(let i=0; i<ModelAttributeArray.length; i++){
+                cubeModel = glMatrix.mat4.create();
+                glMatrix.mat4.multiply(cubeModel, cubePos, MainModelMat);
+                glMatrix.mat4.multiply(cubeModel, cubeModel, ModelAttributeArray[i].modelMat);
+                gl.uniformMatrix4fv(modelLoc, false, cubeModel);
+                gl.drawElements(primtype, indexCounts[i], gl.UNSIGNED_SHORT, count*Uint16Array.BYTES_PER_ELEMENT);
+                count += indexCounts[i];
+                // if(i==ModelAttributeArray.length-1){
+                //     resetTex("./texture/sand.jpg");
+                // } else resetTex(ModelMaterialsArray[i+1].imgSrc);
 
-        //     }
+            }
             
-        // }
+        }
 
         // myTexels.onload = function() {
         //     gl.bindTexture(gl.TEXTURE_2D, texture);
@@ -391,7 +363,12 @@ function loadExternalJSON(url) {
             // createMaterialsArray(ModelInJson);
             // createModelAttributeArray(ModelInJson);
             parse(ModelInJson);
-            setUpWebGL();
+            if(url=='./model/cottage_obj.json') {
+                loadExternalJSON('./model/Heli_bell.json');
+            }else {
+                // console.log(ModelAttributeArray, ModelMaterialsArray);
+                setUpWebGL();
+            }
         })
         .catch(function (error) {
             // error retrieving resource put up alerts...
@@ -399,3 +376,40 @@ function loadExternalJSON(url) {
             console.log(error);
         });
 }
+
+
+
+
+
+    // let cuboid = cube(1);
+    // for(let i = 0, j=0; i < cuboid.vertexPositions.length; i += 3, j+=2){ // structures cube vertex data into correct format
+    //     cottageVertices.push(cuboid.vertexPositions[i]);
+    //     cottageVertices.push(cuboid.vertexPositions[i+1]);
+    //     cottageVertices.push(cuboid.vertexPositions[i+2]);
+    //     cottageVertices.push(cuboid.vertexNormals[i]);
+    //     cottageVertices.push(cuboid.vertexNormals[i+1]);
+    //     cottageVertices.push(cuboid.vertexNormals[i+2]);
+    //     cottageVertices.push(cuboid.vertexTextureCoords[j]);
+    //     cottageVertices.push(cuboid.vertexTextureCoords[j+1]);
+    // }
+    // for(let i =0; i <cuboid.indices.length; i++){
+    //     cottageIndices.push(cuboid.indices[i]);
+    // }
+    // // indexCounts.push(cuboid.indices.length);
+    // let torus = uvTorus(3,2, 12, 12);
+    // for(let i = 0, j=0; i < torus.vertexPositions.length; i += 3, j+=2){ // structures cube vertex data into correct format
+    //     cottageVertices.push(torus.vertexPositions[i]);
+    //     cottageVertices.push(torus.vertexPositions[i+1]);
+    //     cottageVertices.push(torus.vertexPositions[i+2]);
+    //     cottageVertices.push(torus.vertexNormals[i]);
+    //     cottageVertices.push(torus.vertexNormals[i+1]);
+    //     cottageVertices.push(torus.vertexNormals[i+2]);
+    //     cottageVertices.push(torus.vertexTextureCoords[j]);
+    //     cottageVertices.push(torus.vertexTextureCoords[j+1]);
+    // }
+    // // console.log(torus.indices);
+    // for(let i =0; i <torus.indices.length; i++){
+    //     cottageIndices.push(torus.indices[i]+cuboid.vertexPositions.length/3);
+    //     // cottageIndices.push(torus.indices[i]);
+
+    // }
