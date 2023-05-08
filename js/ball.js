@@ -4,6 +4,7 @@ let MainModelMat = glMatrix.mat4.create();
 let ModelMaterialsArray = []; // an array of materials
 let ModelAttributeArray = []; // vertices, normals, textcoords, uv
 let indexCounts = [];
+let modelBuffers = [];
 
 // VIEW MATRIX - Camera (view matrix)
 let cam = new Camera();
@@ -12,6 +13,7 @@ let cottageBuffer = null;
 
 
 function parse(jObj){
+
     MainModelMat = glMatrix.mat4.fromValues( // get main model matrix (applied to all children)
         jObj.rootnode.transformation[0],
         jObj.rootnode.transformation[1],
@@ -72,6 +74,7 @@ function parse(jObj){
         ModelAttributeArray.push(modelObj);
         ModelMaterialsArray.push(mat);
     }
+    
 }
 
 // we need a function to compile shaders
@@ -114,86 +117,91 @@ function myMain() {
 
 function setUpWebGL() {
 
-    // get canvas from DOM (HTML)
     let canvas = document.querySelector("#c");
-    /** @type {WebGLRendecylinderContext} */
+    /** @type {WebGLRenderingContext} */
     let gl = canvas.getContext('webgl2'); 
     let vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSrc);
     let fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSrc);
     let program = createProgram(gl, vertexShader, fragmentShader);
 
-    // process attribute data from JSON model
-    let cottageVertices = [];
-    let cottageIndices = [];
+
     let indexCounts = [];
-   
     let indicesOffset = 0;
+    console.log(ModelAttributeArray, ModelMaterialsArray);
     for(let k = 0; k<ModelAttributeArray.length; k++){
+        let modelVertices = [];
+        let modelIndices = [];
         for(let i = 0, j =0; i < ModelAttributeArray[k].vertices.length; i += 3, j+=2){ // structures cube vertex data into correct format
             // console.log(ModelAttributeArray[i])
-            cottageVertices.push(ModelAttributeArray[k].vertices[i]);
-            cottageVertices.push(ModelAttributeArray[k].vertices[i+1]);
-            cottageVertices.push(ModelAttributeArray[k].vertices[i+2]);
-            cottageVertices.push(ModelAttributeArray[k].normals[i]);
-            cottageVertices.push(ModelAttributeArray[k].normals[i+1]);
-            cottageVertices.push(ModelAttributeArray[k].normals[i+2]);
-            if(ModelAttributeArray[k].texturecoords == undefined){
-                cottageVertices.push(0);
-                cottageVertices.push(0);
+            modelVertices.push(ModelAttributeArray[k].vertices[i]);
+            modelVertices.push(ModelAttributeArray[k].vertices[i+1]);
+            modelVertices.push(ModelAttributeArray[k].vertices[i+2]);
+            modelVertices.push(ModelAttributeArray[k].normals[i]);
+            modelVertices.push(ModelAttributeArray[k].normals[i+1]);
+            modelVertices.push(ModelAttributeArray[k].normals[i+2]);
+            if(ModelAttributeArray[k].texturecoords == undefined || ModelAttributeArray[k].texturecoords.length === 0){
+                modelVertices.push(0);
+                modelVertices.push(0);
             } else {
-                cottageVertices.push(ModelAttributeArray[k].texturecoords[0][j]);
-                cottageVertices.push(ModelAttributeArray[k].texturecoords[0][j+1]);
+                modelVertices.push(ModelAttributeArray[k].texturecoords[0][j]);
+                modelVertices.push(ModelAttributeArray[k].texturecoords[0][j+1]);
             }
 
         }
 
         for(let i=0; i < ModelAttributeArray[k].faces.length; i++){
-            cottageIndices.push(ModelAttributeArray[k].faces[i][0] + indicesOffset);
-            cottageIndices.push(ModelAttributeArray[k].faces[i][1] + indicesOffset);
-            cottageIndices.push(ModelAttributeArray[k].faces[i][2] + indicesOffset);
+            modelIndices.push(ModelAttributeArray[k].faces[i][0]);
+            modelIndices.push(ModelAttributeArray[k].faces[i][1]);
+            modelIndices.push(ModelAttributeArray[k].faces[i][2]);
         }
-        indicesOffset += ModelAttributeArray[k].vertices.length/3;
+        // indicesOffset += ModelAttributeArray[k].vertices.length/3;
         indexCounts.push(ModelAttributeArray[k].faces.length*3);
+            // Create vertex buffer
+        let vertexBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(modelVertices), gl.STATIC_DRAW);
+
+        // Create index buffer
+        let indexBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(modelIndices), gl.STATIC_DRAW);
+
+        // Store the buffers and index count for the current model
+        modelBuffers.push({
+            vertexBuffer: vertexBuffer,
+            indexBuffer: indexBuffer,
+            indexCount: modelIndices.length
+        });
     }
+
+
 
     //set up buffers
     //POSITION
     let positionAttributeLocation = gl.getAttribLocation(program, 'vertPosition');
-    cottageBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, cottageBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(cottageVertices), gl.STATIC_DRAW);
     gl.enableVertexAttribArray(positionAttributeLocation);
     let posSize = 3; // get/read 3 components per iteration
     let type = gl.FLOAT; // size in bits for each item
     let normalize = false;  // do not normalize data, generally Never
     let stride = 8 * Float32Array.BYTES_PER_ELEMENT; // 6 floats per vertex (x,y,z, xn,yn,zn ,tx, ty)
     let offset = 0;  // location to start reading data from in the buffer
-    gl.vertexAttribPointer(positionAttributeLocation, posSize, type, normalize, stride, offset);
     //NORMALS
     let normalVertAttributeLocation = gl.getAttribLocation(program, 'vertNormal');
     let normalVertSize = 3;
     gl.enableVertexAttribArray(normalVertAttributeLocation);
     let normalVertStride = 8 * Float32Array.BYTES_PER_ELEMENT;
     let normalVertOffset = 3 * Float32Array.BYTES_PER_ELEMENT; // normalVert data starts 6 floats after position
-    gl.vertexAttribPointer(normalVertAttributeLocation, normalVertSize, gl.FLOAT, false, normalVertStride, normalVertOffset);
     //TEXTURE
     let texVertAttributeLocation = gl.getAttribLocation(program, 'vertTex');
     let texVertSize = 2;
-    gl.enableVertexAttribArray(texVertAttributeLocation);
     let texVertStride = 8 * Float32Array.BYTES_PER_ELEMENT;
     let texVertOffset = 6 * Float32Array.BYTES_PER_ELEMENT; // normalVert data starts 6 floats after position
-    gl.vertexAttribPointer(texVertAttributeLocation, texVertSize, gl.FLOAT, false, texVertStride, texVertOffset);
-
-    // INDEX BUFFER
-    let indexBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
-    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(cottageIndices), gl.STATIC_DRAW);
-
+    gl.enableVertexAttribArray(texVertAttributeLocation);
     //LOAD TEXTURE
     let texture = gl.createTexture();
     let myTexels = new Image();
-    let texture2 = gl.createTexture();
-    let myTexels2 = new Image();
+    // let texture2 = gl.createTexture();
+    // let myTexels2 = new Image();
     // myTexels.src = ModelMaterialsArray[0].imgSrc;
     myTexels.src = "./texture/cottage_diffuse.png";
     // myTexels2.src = ModelMaterialsArray[0].imgSrc;
@@ -208,16 +216,6 @@ function setUpWebGL() {
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
         isTexLoaded = true;
     };
-
-    // myTexels2.onload = function() {
-    //     gl.bindTexture(gl.TEXTURE_2D, texture2);
-    //     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, myTexels2);
-    //     gl.generateMipmap(gl.TEXTURE_2D);
-    //     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-    //     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    //     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-    //     isTexLoaded = true;
-    // };
 
     function loadAndApplyTexture(src) {
         isTexLoaded = false;
@@ -239,58 +237,59 @@ function setUpWebGL() {
     
 
     gl.useProgram(program);
-    let totalCount = 0
-    for (let i=0; i< indexCounts.length; i++){
-        totalCount += indexCounts[i];
-    }
-    console.log(cottageIndices, cottageVertices, totalCount, indexCounts);
+    console.log(modelBuffers);
+    bladeRotation = 0;
+    heliRotation1 = 0;
+    heliRotation2 = 90;
 
-    function animate(){
+    function animate() {
         gl.clearColor(1, 1, 1, 1.0);
         gl.clear(gl.COLOR_BUFFER_BIT);
         gl.uniformMatrix4fv(viewMatrixLocation, false, cam.cameraMatrix);
-        floorModel = glMatrix.mat4.create();
-        glMatrix.mat4.scale(floorModel, floorModel, [1, 1, 1]);
-        glMatrix.mat4.translate(floorModel, floorModel, [0, -1, 0]);
-        gl.uniformMatrix4fv(modelLoc, false, floorModel);
-        // loadAndApplyTexture("./texture/cottage_diffuse.jpg");
-        // gl.drawElements(primtype, indexCounts[0], gl.UNSIGNED_SHORT, 0);
-        // gl.drawElements(primtype, totalCount, gl.UNSIGNED_SHORT, 0);
-        // gl.drawElements(primtype, indexCounts[1], gl.UNSIGNED_SHORT, indexCounts[0]*Uint16Array.BYTES_PER_ELEMENT);
-
-
-        floorModel = glMatrix.mat4.create();
-        gl.uniformMatrix4fv(modelLoc, false, floorModel);
-        // resetTex(ModelMaterialsArray[0].imgSrc);
-        // loadAndApplyTexture(ModelMaterialsArray[0].imgSrc);
-
+        modelM = glMatrix.mat4.create();
+        gl.uniformMatrix4fv(modelLoc, false, modelM);
+        let materialColor = [1,1,1];
+        gl.uniform3fv(materialColorLoc, materialColor);
+        gl.enableVertexAttribArray(texVertAttributeLocation);
 
         if(isTexLoaded){
-            let count = 0;
-            for(let i=0; i<ModelAttributeArray.length; i++){
-                cubeModel = glMatrix.mat4.create();
-                glMatrix.mat4.multiply(cubeModel, cubePos, MainModelMat);
-                glMatrix.mat4.multiply(cubeModel, cubeModel, ModelAttributeArray[i].modelMat);
-                gl.uniformMatrix4fv(modelLoc, false, cubeModel);
-                gl.drawElements(primtype, indexCounts[i], gl.UNSIGNED_SHORT, count*Uint16Array.BYTES_PER_ELEMENT);
-                count += indexCounts[i];
-                // if(i==ModelAttributeArray.length-1){
-                //     resetTex("./texture/sand.jpg");
-                // } else resetTex(ModelMaterialsArray[i+1].imgSrc);
+            for (let i = 0; i < modelBuffers.length-1; i++) {
+                let modelBuffer = modelBuffers[i];
 
+                // Bind the vertex buffer and set up the vertex attributes for the current model
+                gl.bindBuffer(gl.ARRAY_BUFFER, modelBuffer.vertexBuffer);
+                gl.vertexAttribPointer(positionAttributeLocation, posSize, type, normalize, stride, 0);
+                gl.vertexAttribPointer(normalVertAttributeLocation, normalVertSize, gl.FLOAT, false, normalVertStride, normalVertOffset);
+                gl.vertexAttribPointer(texVertAttributeLocation, texVertSize, gl.FLOAT, false, texVertStride, texVertOffset);
+
+                // Bind the index buffer for the current model
+                gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, modelBuffer.indexBuffer);
+
+                if (i>4){
+                    gl.disableVertexAttribArray(texVertAttributeLocation);
+                    gl.uniform3fv(materialColorLoc, [0,.5,.5]);
+                    // loadAndApplyTexture("./texture/cottage_diffuse.png")
+                    floorModel = glMatrix.mat4.create();
+                    // glMatrix.mat4.scale(floorModel, floorModel, [200, .1, 200]);
+                    glMatrix.mat4.translate(floorModel, floorModel, [0, 20, 0]);
+                    glMatrix.mat4.rotateY(floorModel, floorModel, -.3*heliRotation2++ * Math.PI/180);
+                    glMatrix.mat4.translate(floorModel, floorModel, [10, 0,0]);
+
+                    if(i==6) {
+                        console.log("test");
+                        glMatrix.mat4.translate(floorModel, floorModel,[0, 0, -.7]);
+                        glMatrix.mat4.rotateY(floorModel, floorModel, 3*bladeRotation++ * Math.PI/180);
+                        glMatrix.mat4.translate(floorModel, floorModel,[0, 0, .7]);
+                    }
+                    gl.uniformMatrix4fv(modelLoc, false, floorModel);
+                }
+                
+                gl.drawElements(primtype, modelBuffer.indexCount, gl.UNSIGNED_SHORT, 0);
+                gl.bindBuffer(gl.ARRAY_BUFFER, null);
+                gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
             }
-            
         }
 
-        // myTexels.onload = function() {
-        //     gl.bindTexture(gl.TEXTURE_2D, texture);
-        //     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, myTexels);
-        //     gl.generateMipmap(gl.TEXTURE_2D);
-        //     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-        //     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-        //     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-        //     isTexLoaded = true;
-        // };
         requestAnimationFrame(animate);
     }
 
