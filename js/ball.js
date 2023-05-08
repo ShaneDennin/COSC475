@@ -107,7 +107,7 @@ function createProgram(gl, vertexShader, fragmentShader){
 
 function myMain() {
     // uri is relative to directory containing HTML page
-    loadExternalJSON('./model/wine.json');
+    loadExternalJSON('./model/cottage_obj.json');
     // setUpWebGL();
 }
 
@@ -122,25 +122,43 @@ function setUpWebGL() {
     let program = createProgram(gl, vertexShader, fragmentShader);
 
     // process attribute data from JSON model
-    let cuboid = cube(1);
     let cubeVertices = [];
     let cubeIndices = [];
-    for(let i = 0, j=0; i < cuboid.vertexPositions.length; i += 3, j+=2){ // structures cube vertex data into correct format
-        cubeVertices.push(cuboid.vertexPositions[i]);
-        cubeVertices.push(cuboid.vertexPositions[i+1]);
-        cubeVertices.push(cuboid.vertexPositions[i+2]);
-        cubeVertices.push(cuboid.vertexNormals[i]);
-        cubeVertices.push(cuboid.vertexNormals[i+1]);
-        cubeVertices.push(cuboid.vertexNormals[i+2]);
-        cubeVertices.push(cuboid.vertexTextureCoords[j]);
-        cubeVertices.push(cuboid.vertexTextureCoords[j+1]);
-    }
-    for(let i =0; i <cuboid.indices.length; i++){
-        cubeIndices.push(cuboid.indices[i]);
-    }
-    indexCounts.push(cuboid.indices.length);
-    console.log(indexCounts[0], cubeVertices, cubeIndices);
-    // console.log(ModelAttributeArray);
+    let indexCounts = [];
+    // let cuboid = cube(1);
+    // for(let i = 0, j=0; i < cuboid.vertexPositions.length; i += 3, j+=2){ // structures cube vertex data into correct format
+    //     cubeVertices.push(cuboid.vertexPositions[i]);
+    //     cubeVertices.push(cuboid.vertexPositions[i+1]);
+    //     cubeVertices.push(cuboid.vertexPositions[i+2]);
+    //     cubeVertices.push(cuboid.vertexNormals[i]);
+    //     cubeVertices.push(cuboid.vertexNormals[i+1]);
+    //     cubeVertices.push(cuboid.vertexNormals[i+2]);
+    //     cubeVertices.push(cuboid.vertexTextureCoords[j]);
+    //     cubeVertices.push(cuboid.vertexTextureCoords[j+1]);
+    // }
+    // for(let i =0; i <cuboid.indices.length; i++){
+    //     cubeIndices.push(cuboid.indices[i]);
+    // }
+    // // indexCounts.push(cuboid.indices.length);
+    // let torus = uvTorus(3,2, 12, 12);
+    // for(let i = 0, j=0; i < torus.vertexPositions.length; i += 3, j+=2){ // structures cube vertex data into correct format
+    //     cubeVertices.push(torus.vertexPositions[i]);
+    //     cubeVertices.push(torus.vertexPositions[i+1]);
+    //     cubeVertices.push(torus.vertexPositions[i+2]);
+    //     cubeVertices.push(torus.vertexNormals[i]);
+    //     cubeVertices.push(torus.vertexNormals[i+1]);
+    //     cubeVertices.push(torus.vertexNormals[i+2]);
+    //     cubeVertices.push(torus.vertexTextureCoords[j]);
+    //     cubeVertices.push(torus.vertexTextureCoords[j+1]);
+    // }
+    // // console.log(torus.indices);
+    // for(let i =0; i <torus.indices.length; i++){
+    //     cubeIndices.push(torus.indices[i]+cuboid.vertexPositions.length/3);
+    //     // cubeIndices.push(torus.indices[i]);
+
+    // }
+   
+    let indicesOffset = 0;
     for(let k = 0; k<ModelAttributeArray.length; k++){
         for(let i = 0, j =0; i < ModelAttributeArray[k].vertices.length; i += 3, j+=2){ // structures cube vertex data into correct format
             // console.log(ModelAttributeArray[i])
@@ -150,19 +168,24 @@ function setUpWebGL() {
             cubeVertices.push(ModelAttributeArray[k].normals[i]);
             cubeVertices.push(ModelAttributeArray[k].normals[i+1]);
             cubeVertices.push(ModelAttributeArray[k].normals[i+2]);
-            cubeVertices.push(ModelAttributeArray[k].texturecoords[0][j]);
-            cubeVertices.push(ModelAttributeArray[k].texturecoords[0][j+1]);
+            if(ModelAttributeArray[k].texturecoords == undefined){
+                cubeVertices.push(0);
+                cubeVertices.push(0);
+            } else {
+                cubeVertices.push(ModelAttributeArray[k].texturecoords[0][j]);
+                cubeVertices.push(ModelAttributeArray[k].texturecoords[0][j+1]);
+            }
 
         }
 
         for(let i=0; i < ModelAttributeArray[k].faces.length; i++){
-            cubeIndices.push(ModelAttributeArray[k].faces[i][0]);
-            cubeIndices.push(ModelAttributeArray[k].faces[i][1]);
-            cubeIndices.push(ModelAttributeArray[k].faces[i][2]);
+            cubeIndices.push(ModelAttributeArray[k].faces[i][0] + indicesOffset);
+            cubeIndices.push(ModelAttributeArray[k].faces[i][1] + indicesOffset);
+            cubeIndices.push(ModelAttributeArray[k].faces[i][2] + indicesOffset);
         }
+        indicesOffset += ModelAttributeArray[k].vertices.length/3;
         indexCounts.push(ModelAttributeArray[k].faces.length*3);
     }
-    // console.log(cubeVertices,cubeIndices);
 
     //set up buffers
     //POSITION
@@ -203,7 +226,7 @@ function setUpWebGL() {
     let texture2 = gl.createTexture();
     let myTexels2 = new Image();
     // myTexels.src = ModelMaterialsArray[0].imgSrc;
-    myTexels.src = "./texture/sand.jpg";
+    myTexels.src = "./texture/cottage_diffuse.png";
     myTexels2.src = ModelMaterialsArray[0].imgSrc;
 
     let isTexLoaded = false;
@@ -227,74 +250,75 @@ function setUpWebGL() {
         isTexLoaded = true;
     };
 
-    // function resetTex(src){
-    //     texture = gl.createTexture();
-    //     myTexels = new Image();
-    //     myTexels.src = src;
-    //     console.log(myTexels.src);
-    //     myTexels.onload = function() {
-    //         gl.bindTexture(gl.TEXTURE_2D, texture);
-    //         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, myTexels);
-    //         gl.generateMipmap(gl.TEXTURE_2D);
-    //         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-    //         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    //         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-    //         isTexLoaded = true;
-    //     };
-
-    // }
-
-    // console.log(indexCounts, ModelAttributeArray, ModelMaterialsArray, cubeVertices, cubeIndices);
-
+    function loadAndApplyTexture(src) {
+        isTexLoaded = false;
+        let texture = gl.createTexture();
+        let myTexels = new Image();
+        myTexels.src = src;
+    
+        myTexels.onload = function() {
+            gl.bindTexture(gl.TEXTURE_2D, texture);
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, myTexels);
+            gl.generateMipmap(gl.TEXTURE_2D);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        };
+    
+        return texture;
+    }
+    
 
     gl.useProgram(program);
+    console.log(indexCounts);
+    let totalCount = 0
+    for (let i=0; i< indexCounts.length; i++){
+        totalCount += indexCounts[i];
+    }
     function animate(){
         gl.clearColor(1, 1, 1, 1.0);
         gl.clear(gl.COLOR_BUFFER_BIT);
         gl.uniformMatrix4fv(viewMatrixLocation, false, cam.cameraMatrix);
         floorModel = glMatrix.mat4.create();
-        glMatrix.mat4.scale(floorModel, floorModel, [200, .1, 200]);
+        glMatrix.mat4.scale(floorModel, floorModel, [1, 1, 1]);
         glMatrix.mat4.translate(floorModel, floorModel, [0, -1, 0]);
         gl.uniformMatrix4fv(modelLoc, false, floorModel);
-        gl.drawElements(primtype, 36, gl.UNSIGNED_SHORT, 0);
+        // loadAndApplyTexture("./texture/cottage_diffuse.jpg");
+        // gl.drawElements(primtype, indexCounts[0], gl.UNSIGNED_SHORT, 0);
+        gl.drawElements(primtype, totalCount, gl.UNSIGNED_SHORT, 0);
+        // gl.drawElements(primtype, indexCounts[1], gl.UNSIGNED_SHORT, indexCounts[0]*Uint16Array.BYTES_PER_ELEMENT);
+
+
         floorModel = glMatrix.mat4.create();
         gl.uniformMatrix4fv(modelLoc, false, floorModel);
         // resetTex(ModelMaterialsArray[0].imgSrc);
-        myTexels.src = ModelMaterialsArray[0].imgSrc;
-        myTexels.onload = function() {
-            gl.bindTexture(gl.TEXTURE_2D, texture);
-            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, myTexels);
-            gl.generateMipmap(gl.TEXTURE_2D);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-            isTexLoaded = true;
-        };
+        // loadAndApplyTexture(ModelMaterialsArray[0].imgSrc);
 
-        if(isTexLoaded){
-            for(let i=0; i<ModelAttributeArray.length; i++){
-                cubeModel = glMatrix.mat4.create();
-                glMatrix.mat4.multiply(cubeModel, cubePos, MainModelMat);
-                glMatrix.mat4.multiply(cubeModel, cubeModel, ModelAttributeArray[i].modelMat);
-                gl.uniformMatrix4fv(modelLoc, false, cubeModel);
-                gl.drawElements(primtype, ModelAttributeArray[i].faces.length*3, gl.UNSIGNED_SHORT, 0);
-                // if(i==ModelAttributeArray.length-1){
-                //     resetTex("./texture/sand.jpg");
-                // } else resetTex(ModelMaterialsArray[i+1].imgSrc);
 
-            }
+        // if(isTexLoaded){
+        //     for(let i=0; i<ModelAttributeArray.length; i++){
+        //         cubeModel = glMatrix.mat4.create();
+        //         glMatrix.mat4.multiply(cubeModel, cubePos, MainModelMat);
+        //         glMatrix.mat4.multiply(cubeModel, cubeModel, ModelAttributeArray[i].modelMat);
+        //         gl.uniformMatrix4fv(modelLoc, false, cubeModel);
+        //         gl.drawElements(primtype, ModelAttributeArray[i].faces.length*3, gl.UNSIGNED_SHORT, 0);
+        //         // if(i==ModelAttributeArray.length-1){
+        //         //     resetTex("./texture/sand.jpg");
+        //         // } else resetTex(ModelMaterialsArray[i+1].imgSrc);
+
+        //     }
             
-        }
-        myTexels.src = "./texture/sand.jpg";
-        myTexels.onload = function() {
-            gl.bindTexture(gl.TEXTURE_2D, texture);
-            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, myTexels);
-            gl.generateMipmap(gl.TEXTURE_2D);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-            isTexLoaded = true;
-        };
+        // }
+
+        // myTexels.onload = function() {
+        //     gl.bindTexture(gl.TEXTURE_2D, texture);
+        //     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, myTexels);
+        //     gl.generateMipmap(gl.TEXTURE_2D);
+        //     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        //     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        //     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        //     isTexLoaded = true;
+        // };
         requestAnimationFrame(animate);
     }
 
