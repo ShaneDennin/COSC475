@@ -1,8 +1,21 @@
+/* Camera Guide
+a = move left
+d = move right
+w = move forward
+s = move backward
+j = rotate left
+l = rotate right
+i = pan up
+k = pan down
+- = pedestal down
+= = pedestal up
+*/
+
+
+
+
 class Camera{
     
-    /**
-     * Initialize member variables and create
-     */
     cameraMatrix;
     constructor(){
         // our lookAt matrix
@@ -48,7 +61,6 @@ class Camera{
         glMatrix.vec3.subtract(this.positionVector, this.positionVector, temp);   
         this.updateCameraMatrix()
 
-    //let newPosition = glMatrix.v
     }
     strafeRight(){
         let temp = glMatrix.vec3.create();

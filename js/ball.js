@@ -109,7 +109,6 @@ function createProgram(gl, vertexShader, fragmentShader){
 
 
 function myMain() {
-    // uri is relative to directory containing HTML page
     loadExternalJSON('./model/cottage_obj.json');
 }
 
@@ -136,10 +135,12 @@ function setUpWebGL() {
             modelVertices.push(ModelAttributeArray[k].normals[i]);
             modelVertices.push(ModelAttributeArray[k].normals[i+1]);
             modelVertices.push(ModelAttributeArray[k].normals[i+2]);
+            
             if(ModelAttributeArray[k].texturecoords == undefined || ModelAttributeArray[k].texturecoords.length === 0){
                 modelVertices.push(0);
                 modelVertices.push(0);
             } else {
+                if(i==ModelAttributeArray[k].vertices.length-3) console.log(i,j,k, ModelAttributeArray[k].texturecoords[0][j], ModelAttributeArray[k].texturecoords[0][j+1])
                 modelVertices.push(ModelAttributeArray[k].texturecoords[0][j]);
                 modelVertices.push(ModelAttributeArray[k].texturecoords[0][j+1]);
             }
@@ -206,7 +207,7 @@ function setUpWebGL() {
     myTexels3.src = "./texture/grass.jpg";
     let texture4 = gl.createTexture();
     let myTexels4 = new Image();
-    myTexels4.src = "./texture/camo.png";
+    myTexels4.src = "./texture/camo.jpg";
 
     let isTexLoaded = false;
     let isTexLoaded2 = false;
@@ -252,6 +253,8 @@ function setUpWebGL() {
 
     gl.useProgram(program);
     console.log(modelBuffers);
+
+    //ANIMATION
     bladeRotation = 0;
     heliRotation1 = 0;
     heliRotation2 = 90;
@@ -275,30 +278,30 @@ function setUpWebGL() {
         gl.bindTexture(gl.TEXTURE_2D, texture3);
         
             for (let i = 0; i < modelBuffers.length; i++) {
-                if(isTexLoaded && isTexLoaded2 && isTexLoaded3){
-                let modelBuffer = modelBuffers[i];
+                if(isTexLoaded && isTexLoaded2 && isTexLoaded3 && isTexLoaded4){
 
+                let modelBuffer = modelBuffers[i];
                 // Bind the vertex buffer and set up the vertex attributes for the current model
                 gl.bindBuffer(gl.ARRAY_BUFFER, modelBuffer.vertexBuffer);
                 gl.vertexAttribPointer(positionAttributeLocation, posSize, type, normalize, stride, 0);
                 gl.vertexAttribPointer(normalVertAttributeLocation, normalVertSize, gl.FLOAT, false, normalVertStride, normalVertOffset);
                 gl.vertexAttribPointer(texVertAttributeLocation, texVertSize, gl.FLOAT, false, texVertStride, texVertOffset);
-
                 // Bind the index buffer for the current model
                 gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, modelBuffer.indexBuffer);
-                if(i==0){
+
+
+                if(i==0){ // GRASS
                     floorModel = glMatrix.mat4.create();
                     floorModel = glMatrix.mat4.create();
                     glMatrix.mat4.scale(floorModel, floorModel, [3, .1, 3]);
                     gl.uniformMatrix4fv(modelLoc, false, floorModel);
                 }
-                if(i==4){
+                if(i==4){ // COTTAGE
                     gl.bindTexture(gl.TEXTURE_2D, texture);
                     floorModel = glMatrix.mat4.create();
                     gl.uniformMatrix4fv(modelLoc, false, floorModel);
                 }
-
-                if (i>4 && i<9){
+                if (i>4 && i<9){ // HELICOPTER
                     gl.bindTexture(gl.TEXTURE_2D, texture4);
                     floorModel = glMatrix.mat4.create();
                     glMatrix.mat4.translate(floorModel, floorModel, [0, 20, 0]);
@@ -311,10 +314,10 @@ function setUpWebGL() {
                     }
                     gl.uniformMatrix4fv(modelLoc, false, floorModel);
                 }
-                if(i==9) {
+                if(i==9) { //TURRET
                     gl.bindTexture(gl.TEXTURE_2D, texture2);
                 }
-                if(i>8){
+                if(i>8){ // TURRET
                     gl.uniform3fv(materialColorLoc, [.2,.2,.2]);
                     floorModel = glMatrix.mat4.create();
                     glMatrix.mat4.translate(floorModel, floorModel, [-30, 1, 10]);
@@ -356,10 +359,18 @@ function setUpWebGL() {
                         glMatrix.mat4.translate(floorModel, floorModel,[12, -53,-8]);
                     }
                     gl.uniformMatrix4fv(modelLoc, false, floorModel);
-
+                }
+                if(i==20){//PIKACHU
+                    gl.disableVertexAttribArray(texVertAttributeLocation);
+                    gl.uniform3fv(materialColorLoc, [.7,.7,0]);
+                    floorModel = glMatrix.mat4.create();
+                    glMatrix.mat4.translate(floorModel, floorModel, [0, 0, 0]);
+                    gl.uniformMatrix4fv(modelLoc, false, floorModel);
                 }
                 
-                if(i!=8 && i<20 && i!=16 && i!=1 && i!=2 && i!=3 && i!=12 && i!= 14 && i!= 15 && i!= 16)gl.drawElements(primtype, modelBuffer.indexCount, gl.UNSIGNED_SHORT, 0);
+                if(i!=8 && i<21 && i!=16 && i!=1 && i!=2 && i!=3 && i!=12 && i!= 14 && i!= 15 && i!= 16){ // USELESS CHILDREN (Bad models)
+                    gl.drawElements(primtype, modelBuffer.indexCount, gl.UNSIGNED_SHORT, 0);
+                }
                 gl.bindBuffer(gl.ARRAY_BUFFER, null);
                 gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
             }
@@ -387,24 +398,22 @@ function setUpWebGL() {
 
     //AMBIENT LIGHT
     ambientLightColorLoc = gl.getUniformLocation(program, 'ambientLightColor'); // Ambient Light
-    // let ambientLightCol = ModelMaterialsArray[0].ambient; 
     let ambientLightCol = [.6,.6,.6];
     gl.uniform3fv(ambientLightColorLoc, ambientLightCol);
 
     //DIFFUSE LIGHT POSITION 
-    let lightPosX = 200;
+    let lightPosX = 300;
     let lightPosY= 50;
     let lightPosZ = 200;
     let lightPos = glMatrix.vec3.fromValues(lightPosX,lightPosY,lightPosZ);
 
     lightPositionLoc = gl.getUniformLocation(program, 'lightPosition'); // Light Direction
     let uLightPos = glMatrix.vec3.create();
-    // glMatrix.vec3.add(uLightPos, cubePos, lightPos);
     gl.uniform3fv(lightPositionLoc, lightPos);
 
     //DIFFUSE LIGHT COLOR
     diffuseLightColorLoc = gl.getUniformLocation(program, 'diffuseLightColor'); // diffuse light color
-    let diffuseLightColor = [2.0,2.0,2.0];
+    let diffuseLightColor = [1.5,1.5,1.5];
     gl.uniform3fv(diffuseLightColorLoc, diffuseLightColor);   
 
     // MATERIAL COLOR
@@ -439,8 +448,10 @@ function loadExternalJSON(url) {
             parse(ModelInJson);
             if(url=='./model/cottage_obj.json') {
                 loadExternalJSON('./model/Heli_bell.json');
-            }else if(url=='./model/Heli_bell.json'){
+            } else if(url=='./model/Heli_bell.json'){
                 loadExternalJSON('./model/gunTower.json');
+            } else if(url=='./model/gunTower.json'){
+                loadExternalJSON('./model/pikachu.json');
             } else setUpWebGL();
         })
         .catch(function (error) {
