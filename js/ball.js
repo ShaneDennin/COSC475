@@ -111,8 +111,6 @@ function createProgram(gl, vertexShader, fragmentShader){
 function myMain() {
     // uri is relative to directory containing HTML page
     loadExternalJSON('./model/cottage_obj.json');
-    // loadExternalJSON('./model/Heli_bell.json');
-    // setUpWebGL();
 }
 
 function setUpWebGL() {
@@ -132,7 +130,6 @@ function setUpWebGL() {
         let modelVertices = [];
         let modelIndices = [];
         for(let i = 0, j =0; i < ModelAttributeArray[k].vertices.length; i += 3, j+=2){ // structures cube vertex data into correct format
-            // console.log(ModelAttributeArray[i])
             modelVertices.push(ModelAttributeArray[k].vertices[i]);
             modelVertices.push(ModelAttributeArray[k].vertices[i+1]);
             modelVertices.push(ModelAttributeArray[k].vertices[i+2]);
@@ -154,9 +151,8 @@ function setUpWebGL() {
             modelIndices.push(ModelAttributeArray[k].faces[i][1]);
             modelIndices.push(ModelAttributeArray[k].faces[i][2]);
         }
-        // indicesOffset += ModelAttributeArray[k].vertices.length/3;
         indexCounts.push(ModelAttributeArray[k].faces.length*3);
-            // Create vertex buffer
+        // Create vertex buffer
         let vertexBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(modelVertices), gl.STATIC_DRAW);
@@ -183,30 +179,40 @@ function setUpWebGL() {
     let posSize = 3; // get/read 3 components per iteration
     let type = gl.FLOAT; // size in bits for each item
     let normalize = false;  // do not normalize data, generally Never
-    let stride = 8 * Float32Array.BYTES_PER_ELEMENT; // 6 floats per vertex (x,y,z, xn,yn,zn ,tx, ty)
+    let stride = 8 * Float32Array.BYTES_PER_ELEMENT;
     let offset = 0;  // location to start reading data from in the buffer
     //NORMALS
     let normalVertAttributeLocation = gl.getAttribLocation(program, 'vertNormal');
     let normalVertSize = 3;
     gl.enableVertexAttribArray(normalVertAttributeLocation);
     let normalVertStride = 8 * Float32Array.BYTES_PER_ELEMENT;
-    let normalVertOffset = 3 * Float32Array.BYTES_PER_ELEMENT; // normalVert data starts 6 floats after position
+    let normalVertOffset = 3 * Float32Array.BYTES_PER_ELEMENT; 
     //TEXTURE
     let texVertAttributeLocation = gl.getAttribLocation(program, 'vertTex');
     let texVertSize = 2;
     let texVertStride = 8 * Float32Array.BYTES_PER_ELEMENT;
-    let texVertOffset = 6 * Float32Array.BYTES_PER_ELEMENT; // normalVert data starts 6 floats after position
+    let texVertOffset = 6 * Float32Array.BYTES_PER_ELEMENT; 
     gl.enableVertexAttribArray(texVertAttributeLocation);
-    //LOAD TEXTURE
+
+    //LOAD TEXTURES
     let texture = gl.createTexture();
     let myTexels = new Image();
-    // let texture2 = gl.createTexture();
-    // let myTexels2 = new Image();
-    // myTexels.src = ModelMaterialsArray[0].imgSrc;
     myTexels.src = "./texture/cottage_diffuse.png";
-    // myTexels2.src = ModelMaterialsArray[0].imgSrc;
+    let texture2 = gl.createTexture();
+    let myTexels2 = new Image();
+    myTexels2.src = "./texture/metal.jpg";
+    let texture3 = gl.createTexture();
+    let myTexels3 = new Image();
+    myTexels3.src = "./texture/grass.jpg";
+    let texture4 = gl.createTexture();
+    let myTexels4 = new Image();
+    myTexels4.src = "./texture/camo.png";
 
     let isTexLoaded = false;
+    let isTexLoaded2 = false;
+    let isTexLoaded3 = false;
+    let isTexLoaded4 = false;
+
     myTexels.onload = function() {
         gl.bindTexture(gl.TEXTURE_2D, texture);
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, myTexels);
@@ -216,34 +222,49 @@ function setUpWebGL() {
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
         isTexLoaded = true;
     };
-
-    function loadAndApplyTexture(src) {
-        isTexLoaded = false;
-        let texture = gl.createTexture();
-        let myTexels = new Image();
-        myTexels.src = src;
-    
-        myTexels.onload = function() {
-            gl.bindTexture(gl.TEXTURE_2D, texture);
-            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, myTexels);
-            gl.generateMipmap(gl.TEXTURE_2D);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-            gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-        };
-    
-        return texture;
-    }
-    
+    myTexels2.onload = function() {
+        gl.bindTexture(gl.TEXTURE_2D, texture2);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, myTexels2);
+        gl.generateMipmap(gl.TEXTURE_2D);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        isTexLoaded2 = true;
+    };
+    myTexels3.onload = function() {
+        gl.bindTexture(gl.TEXTURE_2D, texture3);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, myTexels3);
+        gl.generateMipmap(gl.TEXTURE_2D);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        isTexLoaded3 = true;
+    };
+    myTexels4.onload = function() {
+        gl.bindTexture(gl.TEXTURE_2D, texture4);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, myTexels4);
+        gl.generateMipmap(gl.TEXTURE_2D);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        isTexLoaded4 = true;
+    };
 
     gl.useProgram(program);
     console.log(modelBuffers);
     bladeRotation = 0;
     heliRotation1 = 0;
     heliRotation2 = 90;
+    cannon1 = 0;
+    cannon2 = 0;
+    cannon3 = 0;
+    cannon4 = 0;
+    cannonsDir = 1;
+    turret = 0
+    turretDir = 1;
 
     function animate() {
-        gl.clearColor(1, 1, 1, 1.0);
+        gl.clearColor(.67, .84, .9, 1.0);
         gl.clear(gl.COLOR_BUFFER_BIT);
         gl.uniformMatrix4fv(viewMatrixLocation, false, cam.cameraMatrix);
         modelM = glMatrix.mat4.create();
@@ -251,9 +272,10 @@ function setUpWebGL() {
         let materialColor = [1,1,1];
         gl.uniform3fv(materialColorLoc, materialColor);
         gl.enableVertexAttribArray(texVertAttributeLocation);
-
-        if(isTexLoaded){
-            for (let i = 0; i < modelBuffers.length-1; i++) {
+        gl.bindTexture(gl.TEXTURE_2D, texture3);
+        
+            for (let i = 0; i < modelBuffers.length; i++) {
+                if(isTexLoaded && isTexLoaded2 && isTexLoaded3){
                 let modelBuffer = modelBuffers[i];
 
                 // Bind the vertex buffer and set up the vertex attributes for the current model
@@ -264,27 +286,80 @@ function setUpWebGL() {
 
                 // Bind the index buffer for the current model
                 gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, modelBuffer.indexBuffer);
-
-                if (i>4){
-                    gl.disableVertexAttribArray(texVertAttributeLocation);
-                    gl.uniform3fv(materialColorLoc, [0,.5,.5]);
-                    // loadAndApplyTexture("./texture/cottage_diffuse.png")
+                if(i==0){
                     floorModel = glMatrix.mat4.create();
-                    // glMatrix.mat4.scale(floorModel, floorModel, [200, .1, 200]);
+                    floorModel = glMatrix.mat4.create();
+                    glMatrix.mat4.scale(floorModel, floorModel, [3, .1, 3]);
+                    gl.uniformMatrix4fv(modelLoc, false, floorModel);
+                }
+                if(i==4){
+                    gl.bindTexture(gl.TEXTURE_2D, texture);
+                    floorModel = glMatrix.mat4.create();
+                    gl.uniformMatrix4fv(modelLoc, false, floorModel);
+                }
+
+                if (i>4 && i<9){
+                    gl.bindTexture(gl.TEXTURE_2D, texture4);
+                    floorModel = glMatrix.mat4.create();
                     glMatrix.mat4.translate(floorModel, floorModel, [0, 20, 0]);
                     glMatrix.mat4.rotateY(floorModel, floorModel, -.3*heliRotation2++ * Math.PI/180);
                     glMatrix.mat4.translate(floorModel, floorModel, [10, 0,0]);
-
                     if(i==6) {
-                        console.log("test");
                         glMatrix.mat4.translate(floorModel, floorModel,[0, 0, -.7]);
-                        glMatrix.mat4.rotateY(floorModel, floorModel, 3*bladeRotation++ * Math.PI/180);
+                        glMatrix.mat4.rotateY(floorModel, floorModel, 12*bladeRotation++ * Math.PI/180);
                         glMatrix.mat4.translate(floorModel, floorModel,[0, 0, .7]);
                     }
                     gl.uniformMatrix4fv(modelLoc, false, floorModel);
                 }
+                if(i==9) {
+                    gl.bindTexture(gl.TEXTURE_2D, texture2);
+                }
+                if(i>8){
+                    gl.uniform3fv(materialColorLoc, [.2,.2,.2]);
+                    floorModel = glMatrix.mat4.create();
+                    glMatrix.mat4.translate(floorModel, floorModel, [-30, 1, 10]);
+                    glMatrix.mat4.scale(floorModel, floorModel, [.2, .2, .2]);
+                    glMatrix.mat4.rotateY(floorModel, floorModel, Math.PI)
+                    if(i>9){
+                        if(turret>500 || turret<-600){
+                            turretDir *= -1;
+                        }
+                        glMatrix.mat4.rotateY(floorModel, floorModel, .1*turret * Math.PI/180)
+                        turret += turretDir;
+
+                    }
+                    if(i==13) {
+                        glMatrix.mat4.translate(floorModel, floorModel,[-8, 60,0]);
+                        if(cannon1>30 || cannon1<-150){
+                            cannonsDir *= -1;
+                        }
+                        glMatrix.mat4.rotateZ(floorModel, floorModel, .5*cannon1 * Math.PI/180);
+                        cannon1 += cannonsDir;
+                        glMatrix.mat4.translate(floorModel, floorModel,[12, -53,0]);
+                    }
+                    else if(i==18) {
+                        glMatrix.mat4.translate(floorModel, floorModel,[-8, 60,0]);
+                        glMatrix.mat4.rotateZ(floorModel, floorModel, .5*cannon2 * Math.PI/180);
+                        cannon2 += cannonsDir;
+                        glMatrix.mat4.translate(floorModel, floorModel,[12, -60,0]);
+                    }
+                    else if(i==19) {
+                        glMatrix.mat4.translate(floorModel, floorModel,[-10, 55,0]);
+                        glMatrix.mat4.rotateZ(floorModel, floorModel, .5*cannon3 * Math.PI/180);
+                        cannon3 += cannonsDir;
+                        glMatrix.mat4.translate(floorModel, floorModel,[12, -53,0]);
+                    }
+                    else if(i==17) {
+                        glMatrix.mat4.translate(floorModel, floorModel,[-10, 55,0]);
+                        glMatrix.mat4.rotateZ(floorModel, floorModel, .5*cannon4 * Math.PI/180);
+                        cannon4 += cannonsDir;
+                        glMatrix.mat4.translate(floorModel, floorModel,[12, -53,-8]);
+                    }
+                    gl.uniformMatrix4fv(modelLoc, false, floorModel);
+
+                }
                 
-                gl.drawElements(primtype, modelBuffer.indexCount, gl.UNSIGNED_SHORT, 0);
+                if(i!=8 && i<20 && i!=16 && i!=1 && i!=2 && i!=3 && i!=12 && i!= 14 && i!= 15 && i!= 16)gl.drawElements(primtype, modelBuffer.indexCount, gl.UNSIGNED_SHORT, 0);
                 gl.bindBuffer(gl.ARRAY_BUFFER, null);
                 gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, null);
             }
@@ -364,10 +439,9 @@ function loadExternalJSON(url) {
             parse(ModelInJson);
             if(url=='./model/cottage_obj.json') {
                 loadExternalJSON('./model/Heli_bell.json');
-            }else {
-                // console.log(ModelAttributeArray, ModelMaterialsArray);
-                setUpWebGL();
-            }
+            }else if(url=='./model/Heli_bell.json'){
+                loadExternalJSON('./model/gunTower.json');
+            } else setUpWebGL();
         })
         .catch(function (error) {
             // error retrieving resource put up alerts...
@@ -375,40 +449,3 @@ function loadExternalJSON(url) {
             console.log(error);
         });
 }
-
-
-
-
-
-    // let cuboid = cube(1);
-    // for(let i = 0, j=0; i < cuboid.vertexPositions.length; i += 3, j+=2){ // structures cube vertex data into correct format
-    //     cottageVertices.push(cuboid.vertexPositions[i]);
-    //     cottageVertices.push(cuboid.vertexPositions[i+1]);
-    //     cottageVertices.push(cuboid.vertexPositions[i+2]);
-    //     cottageVertices.push(cuboid.vertexNormals[i]);
-    //     cottageVertices.push(cuboid.vertexNormals[i+1]);
-    //     cottageVertices.push(cuboid.vertexNormals[i+2]);
-    //     cottageVertices.push(cuboid.vertexTextureCoords[j]);
-    //     cottageVertices.push(cuboid.vertexTextureCoords[j+1]);
-    // }
-    // for(let i =0; i <cuboid.indices.length; i++){
-    //     cottageIndices.push(cuboid.indices[i]);
-    // }
-    // // indexCounts.push(cuboid.indices.length);
-    // let torus = uvTorus(3,2, 12, 12);
-    // for(let i = 0, j=0; i < torus.vertexPositions.length; i += 3, j+=2){ // structures cube vertex data into correct format
-    //     cottageVertices.push(torus.vertexPositions[i]);
-    //     cottageVertices.push(torus.vertexPositions[i+1]);
-    //     cottageVertices.push(torus.vertexPositions[i+2]);
-    //     cottageVertices.push(torus.vertexNormals[i]);
-    //     cottageVertices.push(torus.vertexNormals[i+1]);
-    //     cottageVertices.push(torus.vertexNormals[i+2]);
-    //     cottageVertices.push(torus.vertexTextureCoords[j]);
-    //     cottageVertices.push(torus.vertexTextureCoords[j+1]);
-    // }
-    // // console.log(torus.indices);
-    // for(let i =0; i <torus.indices.length; i++){
-    //     cottageIndices.push(torus.indices[i]+cuboid.vertexPositions.length/3);
-    //     // cottageIndices.push(torus.indices[i]);
-
-    // }

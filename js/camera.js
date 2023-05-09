@@ -16,7 +16,7 @@ class Camera{
         this.upVector = glMatrix.vec3.fromValues(0.0, 1.0, 0.0);
 
         // or the eye vector. position of camera
-        this.positionVector = glMatrix.vec3.fromValues(0.0, 1.5, 10.0);
+        this.positionVector = glMatrix.vec3.fromValues(-10.0, 10, 70.0);
 
         // amount we scale movement by
         this.delta = 1;
